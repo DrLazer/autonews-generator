@@ -1,6 +1,5 @@
 'use strict';
 
-const AWS = require('aws-sdk');
 const parseString = require('xml2js').parseString;
 const cheerio = require('cheerio');
 
@@ -42,7 +41,7 @@ module.exports.ingestrss = async (event) => {
       items.forEach(async (item) => {
         const rssItem = {
           title: item?.title[0],
-          link: item?.link[0],
+          link: item?.guid[0]?._,
           pubDate: item.pubDate[0],
           description: item.description[0],
         }

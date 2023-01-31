@@ -17,7 +17,8 @@
   },
   "homepage": "https://github.com/DrLazer/autonews-generator#readme",
   "devDependencies": {
-    "jest": "^29.3.1"
+    "jest": "^29.3.1",
+    "serverless-plugin-include-dependencies": "^5.0.0"
   },
   "dependencies": {
     "aws-sdk": "^2.1298.0",
