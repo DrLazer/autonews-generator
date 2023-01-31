@@ -27,7 +27,7 @@ const scrapeArticle = async (url) => {
   return textBlocks;
 }
 
-module.exports.ingestrss = async (event) => {
+module.exports.getMeta = async (event) => {
   console.log(`[bbc]: getting latest rss feed`);
   let xmlDoc = '';
   const rssItems = [];
