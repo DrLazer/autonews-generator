@@ -3,6 +3,9 @@ service: paraphraser
 app: paraphraser-rss
 #org: your-org-name
 
+custom:
+  dynamoSourceMetaTableName: 'SourceMeta-${sls:stage}'
+
 frameworkVersion: '3'
 
 provider:
@@ -10,29 +13,28 @@ provider:
   runtime: nodejs18.x
   region: us-east-1
 
+iam:
+  role:
+    statements:
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - { "Fn::GetAtt": ["DynamoSourceMeta", "Arn" ] }
+
+environment:
+  SOURCE_META_TABLE: ${self:custom.dynamoSourceMetaTableName}
 plugins:
   - serverless-plugin-include-dependencies
 
 # you can overwrite defaults here
 #  stage: dev
-
-# you can add statements to the Lambda function's IAM Role here
-#  iam:
-#    role:
-#      statements:
-#        - Effect: "Allow"
-#          Action:
-#            - "s3:ListBucket"
-#          Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#        - Effect: "Allow"
-#          Action:
-#            - "s3:PutObject"
-#          Resource:
-#            Fn::Join:
-#              - ""
-#              - - "arn:aws:s3:::"
-#                - "Ref" : "ServerlessDeploymentBucket"
-#                - "/*"
 
 # you can define service wide environment variables here
 #  environment:
@@ -98,6 +100,7 @@ resources:
     DynamoSourceMeta:
       Type: AWS::DynamoDB::Table
       Properties:
+        TableName: ${self:custom.dynamoSourceMetaTableName}
         AttributeDefinitions:
           - AttributeName: Id
             AttributeType: S
