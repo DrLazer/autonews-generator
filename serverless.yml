@@ -33,13 +33,6 @@ environment:
 plugins:
   - serverless-plugin-include-dependencies
 
-# you can overwrite defaults here
-#  stage: dev
-
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
-
 # you can add packaging information here
 #package:
 #  patterns:
@@ -94,7 +87,6 @@ functions:
 #    environment:
 #      variable2: value2
 
-# you can add CloudFormation resource templates here
 resources:
   Resources:
     DynamoSourceMeta:
@@ -113,7 +105,7 @@ resources:
             Key: Paraphraser
             Value: Paraphraser
 
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"
+Outputs:
+  NewOutput:
+    Description: "Description for the output"
+    Value: "Some output value"
