@@ -11,8 +11,20 @@ module.exports.filter = async (event) => {
 
   const items = [];
   event.body.forEach(element => {
-
+    const params = {
+      TableName: TableName,
+      ExpressionAttributeNames: {
+        "#Id": "Id"
+      },
+      ExpressionAttributeValues: {
+        ":Id": element.Id,
+      },
+      KeyConditionExpression: "#Id = :Id",
+    }
+    await db.query(params).promise()
   });
   
-  return {};
+  return {
+    statusCode: 200,
+    body: items
 };
