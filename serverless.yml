@@ -20,6 +20,7 @@ provider:
           - dynamodb:*
         Resource:
           - { "Fn::GetAtt": ["DynamoSourceMeta", "Arn" ] }
+          - "Fn::Join": ['/', ["Fn::GetAtt": [ DynamoSourceMeta, Arn ], 'index', 'linkIndex']]
 
 plugins:
   - serverless-plugin-include-dependencies
