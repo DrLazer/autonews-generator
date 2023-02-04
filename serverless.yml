@@ -12,24 +12,23 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: us-east-1
+  environment:
+    SOURCE_META_TABLE: ${self:custom.dynamoSourceMetaTableName}
+  iam:
+    role:
+      statements:
+      - Effect: Allow
+        Action:
+          - dynamodb:DescribeTable
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+        Resource:
+          - { "Fn::GetAtt": ["DynamoSourceMeta", "Arn" ] }
 
-iam:
-  role:
-    statements:
-    - Effect: Allow
-      Action:
-        - dynamodb:DescribeTable
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-      Resource:
-        - { "Fn::GetAtt": ["DynamoSourceMeta", "Arn" ] }
-
-environment:
-  SOURCE_META_TABLE: ${self:custom.dynamoSourceMetaTableName}
 plugins:
   - serverless-plugin-include-dependencies
 
@@ -46,6 +45,8 @@ functions:
     handler: generator/sources/rss/bbc/bbc.getMeta
   transformForDynamo:
     handler: generator/db-transform.dynamo
+  batchWriteToDynamo:
+    handler: generator/db-write.dynamo
   
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
@@ -105,7 +106,7 @@ resources:
             Key: Paraphraser
             Value: Paraphraser
 
-Outputs:
+outputs:
   NewOutput:
     Description: "Description for the output"
     Value: "Some output value"

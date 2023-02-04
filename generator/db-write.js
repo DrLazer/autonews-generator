@@ -16,7 +16,7 @@ module.exports.dynamo = async (event) => {
   for (var x in event) {
       // Add the item to the current batch
       item_count++;
-      current_batch.push(data[x]);
+      current_batch.push(event[x]);
       // If we've added 25 items, add the current batch to the batches array
       // and reset it
       if(item_count%25 == 0) {
@@ -30,11 +30,18 @@ module.exports.dynamo = async (event) => {
   for (x in batches) {
     let params = {
       RequestItems: {
-        "SourceMeta": event
+        [process.env.SOURCE_META_TABLE]: batches[x]
       }
     };
+    
     // Perform the batchWrite operation
-    db.batchWrite(params, handler(params));
+    try {
+      //require("util").inspect.defaultOptions.depth = null;
+      //console.log(params);
+      await db.batchWrite(params).promise();
+    } catch (e) {
+      console.log(e);
+    }
+    return;
   }
-
 };

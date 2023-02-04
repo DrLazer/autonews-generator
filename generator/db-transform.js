@@ -11,13 +11,13 @@ module.exports.dynamo = async (event) => {
   event.forEach(element => {
     let dynamoElements = {};
     Object.keys(element).forEach(key => {
-      dynamoElements[key] = { 'S': element[key] }
+      dynamoElements[key] = element[key];
     });
 
     let item = {
       PutRequest: {
         Item: {
-          'Id': { 'S': uuidv4() },
+          'Id': uuidv4(),
           ...dynamoElements
         }
       }

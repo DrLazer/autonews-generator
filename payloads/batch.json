@@ -1,0 +1,13 @@
+[
+  {
+    "PutRequest": {
+      "Item": {
+        "Id": "54248ad9-d47f-41ff-8081-ae827972ec10",
+        "title": "Bank of England says recession expected to be shorter and less severe",
+        "link": "https://www.bbc.co.uk/news/business-64487179",
+        "pubDate": "Thu, 02 Feb 2023 18:12:09 GMT",
+        "description": "Interest rates rise to 4% as the Bank says the slump will last just over a year rather than almost two."
+      }
+    }
+  }
+ ]
