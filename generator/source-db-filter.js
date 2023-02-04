@@ -10,21 +10,30 @@ module.exports.filter = async (event) => {
   }
 
   const items = [];
-  event.body.forEach(element => {
+  for (const element of event.body) {
     const params = {
       TableName: TableName,
+      IndexName: 'linkIndex',
       ExpressionAttributeNames: {
-        "#Id": "Id"
+        "#Link": "link"
       },
       ExpressionAttributeValues: {
-        ":Id": element.Id,
+        ":Link": element.link,
       },
-      KeyConditionExpression: "#Id = :Id",
+      KeyConditionExpression: "#Link = :Link",
     }
-    await db.query(params).promise()
-  });
-  
+    try {
+      const queriedItems = await db.query(params).promise();
+      if (queriedItems?.Count < 1) {
+        items.push(element)
+      }
+    } catch (e) {
+      console.log('Error querying DynamoDB items: ', e);
+    }
+  };
+
   return {
     statusCode: 200,
     body: items
-};
+  }
+}
