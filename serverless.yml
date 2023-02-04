@@ -34,9 +34,9 @@ functions:
   generateBBCMeta:
     handler: generator/sources/rss/bbc/bbc.getMeta
   transformForDynamo:
-    handler: generator/db-transform.dynamo
+    handler: generator/source-db-transform.dynamo
   batchWriteToDynamo:
-    handler: generator/db-write.dynamo
+    handler: generator/source-db-write.dynamo
 stepFunctions:
   stateMachines:
     paraphraser:
