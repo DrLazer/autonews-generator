@@ -17,14 +17,7 @@ provider:
       statements:
       - Effect: Allow
         Action:
-          - dynamodb:DescribeTable
-          - dynamodb:Query
-          - dynamodb:Scan
-          - dynamodb:GetItem
-          - dynamodb:PutItem
-          - dynamodb:UpdateItem
-          - dynamodb:DeleteItem
-          - dynamodb:BatchWriteItem
+          - dynamodb:*
         Resource:
           - { "Fn::GetAtt": ["DynamoSourceMeta", "Arn" ] }
 
@@ -62,6 +55,11 @@ stepFunctions:
                     Type: Task
                     Resource:
                       Fn::GetAtt: [generateBBCMeta, Arn]                    
+                    Next: DynamoFilter
+                  DynamoFilter:
+                    Type: Task
+                    Resource:
+                      Fn::GetAtt: [filterForDynamo, Arn]
                     Next: DynamoTransform
                   DynamoTransform:
                     Type: Task
