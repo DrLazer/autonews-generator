@@ -53,6 +53,23 @@ stepFunctions:
                   Pass:
                     Type: Pass
                     End: true
+              - StartAt: BBC
+                States:
+                  BBC:
+                    Type: Task
+                    Resource:
+                      Fn::GetAtt: [generateBBCMeta, Arn]                    
+                    Next: DynamoTransform
+                  DynamoTransform:
+                    Type: Task
+                    Resource:
+                      Fn::GetAtt: [transformForDynamo, Arn]                    
+                    Next: DynamoBatchWrite
+                  DynamoBatchWrite:
+                    Type: Task
+                    Resource:
+                      Fn::GetAtt: [batchWriteToDynamo, Arn]                    
+                    End: true
             End: true
 resources:
   Resources:
