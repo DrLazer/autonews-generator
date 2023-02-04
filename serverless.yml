@@ -99,6 +99,8 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
 outputs:
   NewOutput:
     Description: "Description for the output"
