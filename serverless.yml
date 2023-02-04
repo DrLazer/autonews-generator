@@ -25,6 +25,7 @@ provider:
 plugins:
   - serverless-plugin-include-dependencies
   - serverless-step-functions
+  - serverless-lift
 functions:
   generateBBCMeta:
     handler: generator/sources/rss/bbc/bbc.getMeta
@@ -34,6 +35,13 @@ functions:
     handler: generator/source-db-transform.dynamo
   batchWriteToDynamo:
     handler: generator/source-db-write.dynamo
+  pushSourceMetaToScrapeQueue:
+    handler: generator/source-db-queue.push
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt: [DynamoSourceMeta, StreamArn]
 stepFunctions:
   stateMachines:
     paraphraser:
@@ -101,6 +109,13 @@ resources:
               ProjectionType: ALL
         StreamSpecification:
           StreamViewType: NEW_IMAGE
+
+constructs:
+  scrapeQueue:
+      type: queue
+      worker:
+          handler: generator/sources/rss/bbc/bbc.scrapeArticle
+
 outputs:
   NewOutput:
     Description: "Description for the output"

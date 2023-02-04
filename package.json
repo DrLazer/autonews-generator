@@ -18,6 +18,7 @@
   "homepage": "https://github.com/DrLazer/autonews-generator#readme",
   "devDependencies": {
     "jest": "^29.3.1",
+    "serverless-lift": "^1.21.0",
     "serverless-plugin-include-dependencies": "^5.0.0",
     "serverless-step-functions": "^3.12.1"
   },
