@@ -20,8 +20,7 @@ module.exports.push = async (event) => {
     if (record.eventName === 'INSERT') {
       await sqs.sendMessage({
         QueueUrl: process.env.SCRAPE_QUEUE_URL,
-        // Any message data we want to send
-        MessageBody: JSON.stringify(record.dynamodb.NewImage);
+        MessageBody: JSON.stringify(record.dynamodb.NewImage)
       }).promise(); 
     }
   };
