@@ -43,6 +43,13 @@ functions:
           type: dynamodb
           arn:
             Fn::GetAtt: [DynamoSourceMeta, StreamArn]
+  processScrapeQueue:
+    handler: generator/sources/rss/bbc/bbc.scrape
+    events:
+    - sqs:
+        arn: ${construct:scrapeQueue.queueArn}
+        maximumConcurrency: 5
+
 stepFunctions:
   stateMachines:
     paraphraser:
