@@ -7,22 +7,22 @@ const sqs = new AWS.SQS({
 });
 
 module.exports.push = async (event) => {
-  console.log(JSON.stringify(event));
   if (!event?.Records) {
     console.log('Event needs to be dynamo stream output');
     return;
   }
   
-  for (record in event.Records) {
+  for (let i in event.Records) {
+    let record = event.Records[i];
     if (record.eventName !== 'INSERT') {
       console.log('Not an insert, not adding to queue');
     }
     if (record.eventName === 'INSERT') {
       await sqs.sendMessage({
-        QueueUrl: process.env.QUEUE_URL,
+        QueueUrl: process.env.SCRAPE_QUEUE_URL,
         // Any message data we want to send
-        MessageBody: record.dynamodb.NewImage
+        MessageBody: JSON.stringify(record.dynamodb.NewImage);
       }).promise(); 
     }
-  });
+  };
 };

@@ -12,6 +12,7 @@ provider:
   region: us-east-1
   environment:
     SOURCE_META_TABLE: ${self:custom.dynamoSourceMetaTableName}
+    SCRAPE_QUEUE_URL: ${construct:scrapeQueue.queueUrl}
   iam:
     role:
       statements:
