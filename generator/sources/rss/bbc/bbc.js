@@ -1,7 +1,11 @@
 'use strict';
 
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+const client = new S3Client({});
+
 const parseString = require('xml2js').parseString;
 const cheerio = require('cheerio');
+const BucketName = process.env.SOURCE_BUCKET
 
 const scrapeArticle = async (url) => {
   console.log(`[bbc]: loading url for scraping ${url}`);
@@ -17,15 +21,54 @@ const scrapeArticle = async (url) => {
 
   console.log(`[bbc]: loading html into cheerio`);
   const $ = cheerio.load(html);
-  const textBlocks = []
+  let article = '';
+  
+  console.log(`[bbc]: extracting 'main-heading' instance`);
+  const headingText = $('#main-heading').text();
+  console.log(`[bbc]: main-heading is ${headingText}`);
+  article = article + `<h1>${headingText}</h1>`;
 
   console.log(`[bbc]: extracting 'text-block' instances`);
   $('[data-component="text-block"]').each((i, element) => {
-    textBlocks.push($(element).text());
+    article = article + `<p>${$(element).text()}</p>`;
   });
 
-  return textBlocks;
+  return article;
 }
+
+const writeToS3SourceBucket = async (link, article) => {
+  console.log('[bbc]: writing article to s3');
+
+  const command = new PutObjectCommand({
+    Bucket: BucketName,
+    Key: `${link}.json`,
+    Body: JSON.stringify(article)
+  });
+
+  console.log('[bbc]: beginning s3 upload');
+  try {
+    console.log('[bbc]: error uploading to s3');
+    const response = await client.send(command);
+    console.log('[bbc]: upload to s3 succesful');
+  } catch (err) {
+    console.log('[bbc]: error uploading to s3');
+    console.log(err);
+  }
+}
+
+module.exports.scrape = async (event) => {
+  if (!event?.Records) {
+    console.log('[bbc]: Event needs to be SQS message');
+    return;
+  }
+  console.log(`[bbc]: scraping article from scrape queue`);
+  for (let i in event.Records) {
+    let record = event.Records[i];
+    let message = JSON.parse(record.body);
+    const article = await scrapeArticle(message.link.S);
+    await writeToS3SourceBucket(message.link.S, article);
+  }
+};
 
 module.exports.getMeta = async (event) => {
   console.log(`[bbc]: getting latest rss feed`);

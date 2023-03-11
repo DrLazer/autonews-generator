@@ -5,12 +5,14 @@ app: paraphraser-rss
 custom:
   dynamoSourceMetaTableName: 'SourceMeta-${sls:stage}'
   sourceStepFunctionName: 'SourceStep-${sls:stage}'
+  s3SourceBucketName: 'autonews-123456-source-${sls:stage}'
 frameworkVersion: '3'
 provider:
   name: aws
   runtime: nodejs18.x
   region: us-east-1
   environment:
+    SOURCE_BUCKET: ${self:custom.s3SourceBucketName}
     SOURCE_META_TABLE: ${self:custom.dynamoSourceMetaTableName}
     SCRAPE_QUEUE_URL: ${construct:scrapeQueue.queueUrl}
   iam:
@@ -22,6 +24,14 @@ provider:
         Resource:
           - { "Fn::GetAtt": ["DynamoSourceMeta", "Arn" ] }
           - "Fn::Join": ['/', ["Fn::GetAtt": [ DynamoSourceMeta, Arn ], 'index', 'linkIndex']]
+      - Effect: Allow
+        Action:
+          - 's3:*'
+        Resource:
+          Fn::Join:
+            - ''
+            - - 'arn:aws:s3:::'
+              - Ref: S3SourceBucket
 
 plugins:
   - serverless-plugin-include-dependencies
@@ -69,21 +79,25 @@ stepFunctions:
               - StartAt: BBC
                 States:
                   BBC:
-                    Type: Task
+                    Comment: Consume the current live RSS feed for the BBC and extract meta information
+                    Type: Task              
                     Resource:
                       Fn::GetAtt: [generateBBCMeta, Arn]                    
                     Next: DynamoFilter
                   DynamoFilter:
+                    Comment: Filter articles that already exist in the article meta dynamo table
                     Type: Task
                     Resource:
                       Fn::GetAtt: [filterForDynamo, Arn]
                     Next: DynamoTransform
                   DynamoTransform:
+                    Comment: Transform the meta JSON into dynamo items
                     Type: Task
                     Resource:
                       Fn::GetAtt: [transformForDynamo, Arn]                    
                     Next: DynamoBatchWrite
                   DynamoBatchWrite:
+                    Comment: Write to Dyanmo in batches of 25 items
                     Type: Task
                     Resource:
                       Fn::GetAtt: [batchWriteToDynamo, Arn]                    
@@ -100,6 +114,7 @@ resources:
             AttributeType: S
           - AttributeName: link
             AttributeType: S
+            
         KeySchema:
           - AttributeName: Id
             KeyType: HASH
@@ -117,7 +132,10 @@ resources:
               ProjectionType: ALL
         StreamSpecification:
           StreamViewType: NEW_IMAGE
-
+    S3SourceBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.s3SourceBucketName}
 constructs:
   scrapeQueue:
       type: queue

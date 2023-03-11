@@ -23,6 +23,7 @@
     "serverless-step-functions": "^3.12.1"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.289.0",
     "aws-sdk": "^2.1298.0",
     "cheerio": "^1.0.0-rc.12",
     "openai": "^3.1.0",

@@ -1,11 +1,17 @@
-const { getrss } = require('./bbc');
+const { scrape } = require('./bbc');
 
-test('getrss', async () => {
-  const event = {};
-  const context = {};
-  const callback = (error, response) => {
-    expect(response.statusCode).toBe(200);
+test('scrape', async () => {
+  const event = {
+    Records: [{
+      body: JSON.stringify({
+        link: {
+          S: 'https://www.bbc.co.uk/news/uk-64919261',
+        }
+      })
+    }]
   };
-
-  console.log(await getrss(event, context, callback));
+  const article = await scrape(event);
+  console.log(article);
+  expect(article).not.toBe(null);
+  expect(article.length).not.toBe(0);
 });
