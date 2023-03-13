@@ -17,17 +17,25 @@ module.exports.go = async (event) => {
       // Parse the JSON file contents
       const article = JSON.parse(obj.Body.toString());
 
-      // Write the JSON contents to a different S3 bucket
+      // Write the JSON contents to the serve S3 bucket
       const putParams = {
         Bucket: process.env.SERVE_BUCKET,
         Key: key,
         Body: JSON.stringify(article),
         ContentType: 'application/json'
       };
-      const putObject = await s3.putObject(putParams)
+      await s3.putObject(putParams)
         .promise()
-        .then(res => {
+        .then(async (res) => {
           console.log('Successfully added article to serve bucket: ', res);
+
+          // Delete the original S3 object if successfully written to serve bucket
+          const deleteParams = {
+            Bucket: record.s3.bucket.name,
+            Key: key
+          };
+          await s3.deleteObject(deleteParams).promise();
+          console.log('Successfully deleted article from original bucket.');
         })
         .catch(err => {
           console.error('Error uploading article to serve bucket ', err);
