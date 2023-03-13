@@ -17,21 +17,21 @@ provider:
     SOURCE_BUCKET: ${self:custom.s3SourceBucketName}
     SOURCE_META_TABLE: ${self:custom.dynamoSourceMetaTableName}
     SCRAPE_QUEUE_URL: ${construct:scrapeQueue.queueUrl}
-    SERVE_BUCKET: ${self:custom.s3SourceBucketName}
+    SERVE_BUCKET: ${self:custom.s3ServeBucketName}
     SERVE_META_TABLE: ${self:custom.dynamoServeMetaTableName}
   iam:
     role:
       statements:
-      - Effect: Allow
-        Action:
-          - dynamodb:*
-        Resource:
-          - { "Fn::GetAtt": ["DynamoSourceMeta", "Arn" ] }
-          - "Fn::Join": ['/', ["Fn::GetAtt": [ DynamoSourceMeta, Arn ], 'index', 'linkIndex']]
-      - Effect: Allow
-        Action:
-          - 's3:*'
-        Resource: '*'
+        - Effect: Allow
+          Action:
+            - dynamodb:*
+          Resource:
+            - { "Fn::GetAtt": [ "DynamoSourceMeta", "Arn" ] }
+            - "Fn::Join": [ '/', [ "Fn::GetAtt": [ DynamoSourceMeta, Arn ], 'index', 'linkIndex' ] ]
+        - Effect: Allow
+          Action:
+            - 's3:*'
+          Resource: '*'
 
 plugins:
   - serverless-plugin-include-dependencies
@@ -52,13 +52,13 @@ functions:
       - stream:
           type: dynamodb
           arn:
-            Fn::GetAtt: [DynamoSourceMeta, StreamArn]
+            Fn::GetAtt: [ DynamoSourceMeta, StreamArn ]
   processScrapeQueue:
     handler: generator/sources/rss/bbc/bbc.scrape
     events:
-    - sqs:
-        arn: ${construct:scrapeQueue.queueArn}
-        maximumConcurrency: 5
+      - sqs:
+          arn: ${construct:scrapeQueue.queueArn}
+          maximumConcurrency: 5
   processSourceFiles:
     handler: paraphraser/paraphrase.go
     events:
@@ -86,27 +86,27 @@ stepFunctions:
                 States:
                   BBC:
                     Comment: Consume the current live RSS feed for the BBC and extract meta information
-                    Type: Task              
+                    Type: Task
                     Resource:
-                      Fn::GetAtt: [generateBBCMeta, Arn]                    
+                      Fn::GetAtt: [ generateBBCMeta, Arn ]
                     Next: DynamoFilter
                   DynamoFilter:
                     Comment: Filter articles that already exist in the article meta dynamo table
                     Type: Task
                     Resource:
-                      Fn::GetAtt: [filterForDynamo, Arn]
+                      Fn::GetAtt: [ filterForDynamo, Arn ]
                     Next: DynamoTransform
                   DynamoTransform:
                     Comment: Transform the meta JSON into dynamo items
                     Type: Task
                     Resource:
-                      Fn::GetAtt: [transformForDynamo, Arn]                    
+                      Fn::GetAtt: [ transformForDynamo, Arn ]
                     Next: DynamoBatchWrite
                   DynamoBatchWrite:
-                    Comment: Write to Dyanmo in batches of 25 items
+                    Comment: Write to Dynamo in batches of 25 items
                     Type: Task
                     Resource:
-                      Fn::GetAtt: [batchWriteToDynamo, Arn]                    
+                      Fn::GetAtt: [ batchWriteToDynamo, Arn ]
                     End: true
             End: true
 resources:
@@ -120,14 +120,13 @@ resources:
             AttributeType: S
           - AttributeName: link
             AttributeType: S
-            
+
         KeySchema:
           - AttributeName: Id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         Tags:
-          - 
-            Key: Paraphraser
+          - Key: Paraphraser
             Value: Paraphraser
         GlobalSecondaryIndexes:
           - IndexName: linkIndex
@@ -147,14 +146,13 @@ resources:
             AttributeType: S
           - AttributeName: link
             AttributeType: S
-            
+
         KeySchema:
           - AttributeName: Id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         Tags:
-          - 
-            Key: Paraphraser
+          - Key: Paraphraser
             Value: Paraphraser
         GlobalSecondaryIndexes:
           - IndexName: linkIndex
@@ -165,19 +163,15 @@ resources:
               ProjectionType: ALL
         StreamSpecification:
           StreamViewType: NEW_IMAGE
-    S3SourceBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: ${self:custom.s3SourceBucketName}
     S3ServeBucket:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:custom.s3ServeBucketName}
 constructs:
   scrapeQueue:
-      type: queue
-      worker:
-          handler: generator/sources/rss/bbc/bbc.scrapeArticle
+    type: queue
+    worker:
+      handler: generator/sources/rss/bbc/bbc.scrapeArticle
 
 outputs:
   NewOutput:
