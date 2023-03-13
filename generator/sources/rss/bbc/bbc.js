@@ -1,11 +1,10 @@
 'use strict';
 
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-const client = new S3Client({});
-
 const parseString = require('xml2js').parseString;
 const cheerio = require('cheerio');
 const BucketName = process.env.SOURCE_BUCKET
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const client = new S3Client();
 
 const scrapeArticle = async (url) => {
   console.log(`[bbc]: loading url for scraping ${url}`);
@@ -14,7 +13,7 @@ const scrapeArticle = async (url) => {
     const response = await fetch(url);
     html = await response.text();
   } catch (error) {
-    console.log(`[bbc]: error loeading url for scraping ${url}`);
+    console.log(`[bbc]: error loading url for scraping ${url}`);
     console.log(error);
     return;
   }
@@ -37,7 +36,7 @@ const scrapeArticle = async (url) => {
 }
 
 const writeToS3SourceBucket = async (link, article) => {
-  console.log('[bbc]: writing article to s3');
+  console.log('[bbc]: writing article to s3.');
 
   const command = new PutObjectCommand({
     Bucket: BucketName,
@@ -47,7 +46,6 @@ const writeToS3SourceBucket = async (link, article) => {
 
   console.log('[bbc]: beginning s3 upload');
   try {
-    console.log('[bbc]: error uploading to s3');
     const response = await client.send(command);
     console.log('[bbc]: upload to s3 succesful');
   } catch (err) {
