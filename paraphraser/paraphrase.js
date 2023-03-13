@@ -1,5 +1,14 @@
 const AWS = require('aws-sdk');
+const { Configuration, OpenAIApi } = require("openai");
+
+// AWS Config
 const s3 = new AWS.S3();
+
+// Open AI Config
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
 
 module.exports.go = async (event) => {
   try {
@@ -15,7 +24,32 @@ module.exports.go = async (event) => {
       const obj = await s3.getObject(params).promise();
 
       // Parse the JSON file contents
-      const article = JSON.parse(obj.Body.toString());
+      const article = {
+        original: JSON.parse(obj.Body.toString()),
+      };
+
+      console.log("Original article to rewrite: ", article);
+
+      // Rewrite the article with the OpenAI API
+      const prompt = `Rewrite the following article without re-using any sentences.
+      Remove any reference to the source who wrote it.
+      Keep the html tags and wrap the result in a div tag.:\n\n ${article.original}`;
+      const conversation = [{
+        role: 'system',
+        content: prompt
+      }];
+      const gptResponse = await openai.createChatCompletion({
+        model: 'gpt-3.5-turbo',
+        max_tokens: 1000,
+        messages: conversation,
+      });
+
+      console.log("CHAT GPT RESPONSE: ", gptResponse)
+
+      const rewrittenArticle = gptResponse?.data?.choices[0]?.message?.content;
+
+      // Add the rewritten version of the article to the original JSON object for comparison.
+      article.rewritten = rewrittenArticle;
 
       // Write the JSON contents to the serve S3 bucket
       const putParams = {

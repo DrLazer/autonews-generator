@@ -61,6 +61,7 @@ functions:
           maximumConcurrency: 5
   processSourceFiles:
     handler: paraphraser/paraphrase.go
+    timeout: 200 # ChatGPT response can be slow so added increased timeout for this
     events:
       - s3:
           bucket: ${self:custom.s3SourceBucketName}
