@@ -35,12 +35,12 @@ const scrapeArticle = async (url) => {
   return article;
 }
 
-const writeToS3SourceBucket = async (link, article) => {
+const writeToS3SourceBucket = async (id, article) => {
   console.log('[bbc]: writing article to s3.');
 
   const command = new PutObjectCommand({
     Bucket: BucketName,
-    Key: `${link}.json`,
+    Key: `${id}.json`,
     Body: JSON.stringify(article)
   });
 
@@ -64,7 +64,7 @@ module.exports.scrape = async (event) => {
     let record = event.Records[i];
     let message = JSON.parse(record.body);
     const article = await scrapeArticle(message.link.S);
-    await writeToS3SourceBucket(message.link.S, article);
+    await writeToS3SourceBucket(message.Id.S, article);
   }
 };
 
