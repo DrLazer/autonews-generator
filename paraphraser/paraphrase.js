@@ -1,10 +1,8 @@
 const AWS = require('aws-sdk');
 const { Configuration, OpenAIApi } = require("openai");
 
-// AWS Config
 const s3 = new AWS.S3();
 
-// Open AI Config
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
