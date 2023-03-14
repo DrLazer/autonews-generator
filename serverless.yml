@@ -6,8 +6,8 @@ custom:
   dynamoSourceMetaTableName: 'SourceMeta-${sls:stage}'
   dynamoServeMetaTableName: 'ServeMeta-${sls:stage}'
   sourceStepFunctionName: 'SourceStep-${sls:stage}'
-  s3SourceBucketName: 'autonews-123456-source-${sls:stage}'
-  s3ServeBucketName: 'autonews-123456-serve-${sls:stage}'
+  s3SourceBucketName: 'autonews-1234567-source-${sls:stage}'
+  s3ServeBucketName: 'autonews-1234567-serve-${sls:stage}'
 frameworkVersion: '3'
 provider:
   name: aws
@@ -147,7 +147,8 @@ resources:
             AttributeType: S
           - AttributeName: link
             AttributeType: S
-
+          - AttributeName: sourceId
+            AttributeType: S
         KeySchema:
           - AttributeName: Id
             KeyType: HASH
@@ -159,6 +160,12 @@ resources:
           - IndexName: linkIndex
             KeySchema:
               - AttributeName: link
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: sourceIdIndex
+            KeySchema:
+              - AttributeName: sourceId
                 KeyType: HASH
             Projection:
               ProjectionType: ALL

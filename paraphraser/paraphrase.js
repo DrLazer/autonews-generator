@@ -2,6 +2,9 @@ const AWS = require('aws-sdk');
 const { Configuration, OpenAIApi } = require("openai");
 
 const s3 = new AWS.S3();
+const db = new AWS.DynamoDB.DocumentClient();
+const sourceTableName = process.env.SOURCE_META_TABLE;
+const serveTableName = process.env.SERVE_META_TABLE;
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -26,12 +29,33 @@ module.exports.go = async (event) => {
         original: JSON.parse(obj.Body.toString()),
       };
 
+      // Select the source meta from dynamo
+      console.log(`selecting from source meta with id ${key.replace('.json','')}`);
+      const dynamoSourceParams = {
+        TableName: sourceTableName,
+        KeyConditionExpression: '#id = :id',
+        ExpressionAttributeNames: {
+          '#id': 'Id',
+        },
+        ExpressionAttributeValues: {
+          ":id": key.replace('.json','')
+        },
+      };
+      const queriedItems = await db.query(dynamoSourceParams).promise();
+      if (!queriedItems.Items) {
+        throw new Error(`No source meta with id ${key.replace('.json','')}`);
+      };
+
+      console.log('source meta');
+      console.log(queriedItems.Items[0]);
+
+
       console.log("Original article to rewrite: ", article);
 
       // Rewrite the article with the OpenAI API
       const prompt = `Rewrite the following article without re-using any sentences.
       Remove any reference to the source who wrote it.
-      Keep the html tags and wrap the result in a div tag.:\n\n ${article.original}`;
+      Keep the html tags: ${article.original}`;
       const conversation = [{
         role: 'system',
         content: prompt
@@ -56,22 +80,19 @@ module.exports.go = async (event) => {
         Body: JSON.stringify(article),
         ContentType: 'application/json'
       };
-      await s3.putObject(putParams)
-        .promise()
-        .then(async (res) => {
-          console.log('Successfully added article to serve bucket: ', res);
+      const res = await s3.putObject(putParams).promise();
+      console.log('Successfully added article to serve bucket: ', res);
 
-          // Delete the original S3 object if successfully written to serve bucket
-          const deleteParams = {
-            Bucket: record.s3.bucket.name,
-            Key: key
-          };
-          await s3.deleteObject(deleteParams).promise();
-          console.log('Successfully deleted article from original bucket.');
-        })
-        .catch(err => {
-          console.error('Error uploading article to serve bucket ', err);
-        });
+      // Write the serve meta
+      
+
+      // Delete the original S3 object if successfully written to serve bucket
+      const deleteParams = {
+        Bucket: record.s3.bucket.name,
+        Key: key
+      };
+      await s3.deleteObject(deleteParams).promise();
+      console.log('Successfully deleted article from original bucket.');
     }
   } catch (err) {
     console.error(err);
