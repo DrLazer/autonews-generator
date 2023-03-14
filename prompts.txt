@@ -1,0 +1,6 @@
+only reply true or false
+
+Do these two news headlines have a possibility of a shared topic?
+
+Article 1 : Meta lay-offs: Facebook owner to cut 10,000 staff
+Article 2 : Hedge funds stung by bond market fallout from Silicon Valley Bank collapse

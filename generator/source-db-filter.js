@@ -25,7 +25,9 @@ module.exports.filter = async (event) => {
     try {
       const queriedItems = await db.query(params).promise();
       if (queriedItems?.Count < 1) {
-        items.push(element)
+        if (!element.link.includes('/sport/')) {
+          items.push(element);
+        }
       }
     } catch (e) {
       console.log('Error querying DynamoDB items: ', e);

@@ -49,7 +49,6 @@ module.exports.go = async (event) => {
       console.log('source meta');
       console.log(queriedItems.Items[0]);
 
-
       console.log("Original article to rewrite: ", article);
 
       // Rewrite the article with the OpenAI API
@@ -84,7 +83,7 @@ module.exports.go = async (event) => {
       console.log('Successfully added article to serve bucket: ', res);
 
       // Write the serve meta
-      
+
 
       // Delete the original S3 object if successfully written to serve bucket
       const deleteParams = {
