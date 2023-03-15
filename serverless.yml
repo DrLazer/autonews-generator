@@ -68,6 +68,12 @@ functions:
       - s3:
           bucket: ${self:custom.s3SourceBucketName}
           event: s3:ObjectCreated:*
+  api:
+    handler: api/api.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: any
 
 stepFunctions:
   stateMachines:
