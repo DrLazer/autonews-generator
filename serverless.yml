@@ -14,6 +14,11 @@ provider:
   name: aws
   runtime: nodejs18.x
   region: us-east-1
+  apiGateway:
+    apiKeys:
+      - name: webUIAPIKey
+        value: ${env:WEBUI_API_KEY}
+    
   environment:
     SOURCE_BUCKET: ${self:custom.s3SourceBucketName}
     SOURCE_META_TABLE: ${self:custom.dynamoSourceMetaTableName}
@@ -34,7 +39,6 @@ provider:
           Action:
             - 's3:*'
           Resource: '*'
-
 plugins:
   - serverless-plugin-include-dependencies
   - serverless-step-functions
@@ -74,6 +78,7 @@ functions:
       - http:
           path: /{proxy+}
           method: any
+          private: true
 
 stepFunctions:
   stateMachines:
@@ -157,6 +162,8 @@ resources:
             AttributeType: S
           - AttributeName: sourceId
             AttributeType: S
+          - AttributeName: pubDate
+            AttributeType: S
         KeySchema:
           - AttributeName: Id
             KeyType: HASH
@@ -177,12 +184,19 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
+          - IndexName: pubDateIndex
+            KeySchema:
+              - AttributeName: pubDate
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
         StreamSpecification:
           StreamViewType: NEW_IMAGE
     S3ServeBucket:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:custom.s3ServeBucketName}
+
 constructs:
   scrapeQueue:
     type: queue
