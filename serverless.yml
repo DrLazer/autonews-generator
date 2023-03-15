@@ -1,4 +1,5 @@
 service: paraphraser
+useDotenv: true
 # app and org for use with dashboard.serverless.com
 app: paraphraser-rss
 #org: your-org-name
@@ -6,8 +7,8 @@ custom:
   dynamoSourceMetaTableName: 'SourceMeta-${sls:stage}'
   dynamoServeMetaTableName: 'ServeMeta-${sls:stage}'
   sourceStepFunctionName: 'SourceStep-${sls:stage}'
-  s3SourceBucketName: 'autonews-1234567-source-${sls:stage}'
-  s3ServeBucketName: 'autonews-1234567-serve-${sls:stage}'
+  s3SourceBucketName: 'autonews-${env:S3_BUCKET_PREFIX}-source-${sls:stage}'
+  s3ServeBucketName: 'autonews-${env:S3_BUCKET_PREFIX}-serve-${sls:stage}'
 frameworkVersion: '3'
 provider:
   name: aws
@@ -19,6 +20,7 @@ provider:
     SCRAPE_QUEUE_URL: ${construct:scrapeQueue.queueUrl}
     SERVE_BUCKET: ${self:custom.s3ServeBucketName}
     SERVE_META_TABLE: ${self:custom.dynamoServeMetaTableName}
+    OPENAI_API_KEY: ${env:OPENAI_API_KEY}
   iam:
     role:
       statements:

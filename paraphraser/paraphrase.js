@@ -6,6 +6,8 @@ const db = new AWS.DynamoDB.DocumentClient();
 const sourceTableName = process.env.SOURCE_META_TABLE;
 const serveTableName = process.env.SERVE_META_TABLE;
 
+const AUTHOR = "Daniel O'Daniela";
+
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -52,9 +54,15 @@ module.exports.go = async (event) => {
       console.log("Original article to rewrite: ", article);
 
       // Rewrite the article with the OpenAI API
-      const prompt = `Rewrite the following article without re-using any sentences.
-      Remove any reference to the source who wrote it.
-      Keep the html tags: ${article.original}`;
+      const prompt = `Please rewrite the following article, 
+      ensuring that none of the original sentences are used but maintaining the same topic and meaning. 
+      Also generate me a heading, a one sentance short description with no html tags, 
+      and categorise the article into one of the following: 
+      news, sport, climate, UK, world, business, politics, technology, science, health, family, education. 
+      Remove all references to the original author, but keep the HTML tags intact. 
+      Do not include any new line '\n' tags in your response. 
+      Return the output as a JavaScript object with the following keys: headline, description, category, article.
+      : ${article.original}`;
       const conversation = [{
         role: 'system',
         content: prompt
@@ -70,7 +78,7 @@ module.exports.go = async (event) => {
       const rewrittenArticle = gptResponse?.data?.choices[0]?.message?.content;
 
       // Add the rewritten version of the article to the original JSON object for comparison.
-      article.rewritten = rewrittenArticle;
+      const gptOutput = JSON.parse(rewrittenArticle);
 
       // Write the JSON contents to the serve S3 bucket
       const putParams = {
@@ -83,7 +91,23 @@ module.exports.go = async (event) => {
       console.log('Successfully added article to serve bucket: ', res);
 
       // Write the serve meta
-
+      const servePutParams = {
+        TableName: serveTableName,
+        Item: {
+          'pubDate': { S: queriedItems.Items[0].pubDate },
+          'description': { S: gptOutput?.description },
+          'title': { S: gptOutput?.headline },
+          'author': { S: AUTHOR },
+          'category': { S: gptOutput?.category },
+          'sourceId': { S: key.replace('.json','') }
+        }
+      };
+      try {
+        const result = await dynamodb.putItem(servePutParams).promise();
+        console.log('Record written successfully:', result);
+      } catch (err) {
+        console.error(err);
+      }
 
       // Delete the original S3 object if successfully written to serve bucket
       const deleteParams = {

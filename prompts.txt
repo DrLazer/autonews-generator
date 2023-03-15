@@ -4,3 +4,10 @@ Do these two news headlines have a possibility of a shared topic?
 
 Article 1 : Meta lay-offs: Facebook owner to cut 10,000 staff
 Article 2 : Hedge funds stung by bond market fallout from Silicon Valley Bank collapse
+
+
+
+
+
+
+Please rewrite the following article, ensuring that none of the original sentences are used but maintaining the same topic and meaning. Also generate me a heading, a short description, and categorise the article into one of the following: news, sport, climate, UK, world, business, politics, technology, science, health, family, education. Remove all references to the original author, but keep the HTML tags intact. Do not include any new line '\n' tags in your response. Return the output as a JavaScript object with the following keys: headline, description, category, article.
