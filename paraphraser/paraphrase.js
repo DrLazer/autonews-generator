@@ -1,10 +1,10 @@
 const AWS = require('aws-sdk');
+const { DateTime } = require("luxon");
 const { Configuration, OpenAIApi } = require("openai");
 
 const s3 = new AWS.S3();
 const db = new AWS.DynamoDB.DocumentClient();
-const sourceTableName = process.env.SOURCE_META_TABLE;
-const serveTableName = process.env.SERVE_META_TABLE;
+const singleTableName = process.env.DYNAMO_SINGLE_TABLE;
 
 const AUTHOR = "Daniel O'Daniela";
 
@@ -32,20 +32,22 @@ module.exports.go = async (event) => {
       };
 
       // Select the source meta from dynamo
-      console.log(`selecting from source meta with id ${key.replace('.json','')}`);
+      console.log(`selecting article ${key.replace('.json','')}`);
       const dynamoSourceParams = {
-        TableName: sourceTableName,
-        KeyConditionExpression: '#id = :id',
+        TableName: singleTableName,
+        KeyConditionExpression: '#Pk = :pk and #Sk = :sk',
         ExpressionAttributeNames: {
-          '#id': 'Id',
+          '#Pk': 'Pk',
+          '#Sk': 'Sk',
         },
         ExpressionAttributeValues: {
-          ":id": key.replace('.json','')
+          ":pk": 'source-article',
+          ":sk": key.replace('.json',''),
         },
       };
       const queriedItems = await db.query(dynamoSourceParams).promise();
       if (!queriedItems.Items) {
-        throw new Error(`No source meta with id ${key.replace('.json','')}`);
+        throw new Error(`No article with sk ${key.replace('.json','')}`);
       };
 
       console.log('source meta');
@@ -92,14 +94,15 @@ module.exports.go = async (event) => {
 
       // Write the serve meta
       const servePutParams = {
-        TableName: serveTableName,
+        TableName: singleTableName,
         Item: {
-          'pubDate': { S: queriedItems.Items[0].pubDate },
+          'pubDate': { N: DateTime.fromHTTP(queriedItems.Items[0].pubDate).toUnixInteger() },
           'description': { S: gptOutput?.description },
           'title': { S: gptOutput?.headline },
           'author': { S: AUTHOR },
           'category': { S: gptOutput?.category },
-          'sourceId': { S: key.replace('.json','') }
+          'Sk': { S: key.replace('.json','') },
+          'Pk': { S: 'serve-article' }
         }
       };
       try {

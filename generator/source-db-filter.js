@@ -2,7 +2,7 @@
 
 const { DynamoDB } = require("aws-sdk");
 const db = new DynamoDB.DocumentClient()
-const TableName = process.env.SOURCE_META_TABLE
+const TableName = process.env.DYNAMO_SINGLE_TABLE
 
 module.exports.filter = async (event) => {
   if (!(Array.isArray(event.body) && event.body.length)) {

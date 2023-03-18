@@ -5,7 +5,8 @@ app: paraphraser-rss
 #org: your-org-name
 custom:
   dynamoSourceMetaTableName: 'SourceMeta-${sls:stage}'
-  dynamoServeMetaTableName: 'ServeMeta-${sls:stage}'
+  dynamoServeMetaTableName: 'ServeMeta-2-${sls:stage}'
+  dynamoSingleTable: 'paraphraser-data-${sls:stage}'
   sourceStepFunctionName: 'SourceStep-${sls:stage}'
   s3SourceBucketName: 'autonews-${env:S3_BUCKET_PREFIX}-source-${sls:stage}'
   s3ServeBucketName: 'autonews-${env:S3_BUCKET_PREFIX}-serve-${sls:stage}'
@@ -20,6 +21,7 @@ provider:
         value: ${env:WEBUI_API_KEY}
     
   environment:
+    DYNAMO_SINGLE_TABLE: ${self:custom.dynamoSingleTable}
     SOURCE_BUCKET: ${self:custom.s3SourceBucketName}
     SOURCE_META_TABLE: ${self:custom.dynamoSourceMetaTableName}
     SCRAPE_QUEUE_URL: ${construct:scrapeQueue.queueUrl}
@@ -33,8 +35,10 @@ provider:
           Action:
             - dynamodb:*
           Resource:
+            - { "Fn::GetAtt": [ "DynamoSingleTable", "Arn" ] }
             - { "Fn::GetAtt": [ "DynamoSourceMeta", "Arn" ] }
             - "Fn::Join": [ '/', [ "Fn::GetAtt": [ DynamoSourceMeta, Arn ], 'index', 'linkIndex' ] ]
+            - "Fn::Join": [ '/', [ "Fn::GetAtt": [ DynamoSingleTable, Arn ], 'index', 'linkIndex' ] ]
         - Effect: Allow
           Action:
             - 's3:*'
@@ -58,7 +62,7 @@ functions:
       - stream:
           type: dynamodb
           arn:
-            Fn::GetAtt: [ DynamoSourceMeta, StreamArn ]
+            Fn::GetAtt: [ DynamoSingleTable, StreamArn ]
   processScrapeQueue:
     handler: generator/sources/rss/bbc/bbc.scrape
     events:
@@ -125,6 +129,46 @@ stepFunctions:
             End: true
 resources:
   Resources:
+    DynamoSingleTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.dynamoSingleTable}
+        AttributeDefinitions:
+          - AttributeName: Pk
+            AttributeType: S
+          - AttributeName: Sk
+            AttributeType: S
+          - AttributeName: link
+            AttributeType: S
+          - AttributeName: pubDate
+            AttributeType: N
+        KeySchema:
+          - AttributeName: Pk
+            KeyType: HASH
+          - AttributeName: Sk
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        Tags:
+          - Key: Paraphraser
+            Value: Paraphraser
+        GlobalSecondaryIndexes:
+          - IndexName: linkIndex
+            KeySchema:
+              - AttributeName: link
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: pubDateIndex
+            KeySchema:
+              - AttributeName: Pk
+                KeyType: HASH
+              - AttributeName: pubDate
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
+
     DynamoSourceMeta:
       Type: AWS::DynamoDB::Table
       Properties:
@@ -134,7 +178,6 @@ resources:
             AttributeType: S
           - AttributeName: link
             AttributeType: S
-
         KeySchema:
           - AttributeName: Id
             KeyType: HASH
@@ -163,7 +206,7 @@ resources:
           - AttributeName: sourceId
             AttributeType: S
           - AttributeName: pubDate
-            AttributeType: S
+            AttributeType: N
         KeySchema:
           - AttributeName: Id
             KeyType: HASH

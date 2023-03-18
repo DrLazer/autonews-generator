@@ -64,7 +64,7 @@ module.exports.scrape = async (event) => {
     let record = event.Records[i];
     let message = JSON.parse(record.body);
     const article = await scrapeArticle(message.link.S);
-    await writeToS3SourceBucket(message.Id.S, article);
+    await writeToS3SourceBucket(message.Sk.S, article);
   }
 };
 

@@ -2,7 +2,7 @@
 
 const { DynamoDB } = require("aws-sdk");
 const db = new DynamoDB.DocumentClient()
-const TableName = process.env.SOURCE_META_TABLE
+const TableName = process.env.DYNAMO_SINGLE_TABLE
 
 module.exports.dynamo = async (event) => {
   if (!(Array.isArray(event) && event.length)) {
@@ -30,7 +30,7 @@ module.exports.dynamo = async (event) => {
   for (x in batches) {
     let params = {
       RequestItems: {
-        [process.env.SOURCE_META_TABLE]: batches[x]
+        [process.env.DYNAMO_SINGLE_TABLE]: batches[x]
       }
     };
     
