@@ -63,50 +63,51 @@ module.exports.go = async (event) => {
       news, sport, climate, UK, world, business, politics, technology, science, health, family, education. 
       Remove all references to the original author, but keep the HTML tags intact. 
       Do not include any new line '\n' tags in your response. 
-      Return the output as a JavaScript object with the following keys: headline, description, category, article.
+      Return the output as a valid JSON object with the following keys: headline, description, category, article. 
       : ${article.original}`;
       const conversation = [{
         role: 'system',
         content: prompt
       }];
-      const gptResponse = await openai.createChatCompletion({
+      const gptResponseObject = await openai.createChatCompletion({
         model: 'gpt-3.5-turbo',
         max_tokens: 1000,
         messages: conversation,
       });
 
-      console.log("CHAT GPT RESPONSE: ", gptResponse)
+      let gptResponse = gptResponseObject?.data?.choices[0]?.message?.content;
+      console.log('GPT response');
+      console.log(gptResponse);
 
-      const rewrittenArticle = gptResponse?.data?.choices[0]?.message?.content;
-
-      // Add the rewritten version of the article to the original JSON object for comparison.
-      const gptOutput = JSON.parse(rewrittenArticle);
+      gptResponse = JSON.parse(gptResponse);
 
       // Write the JSON contents to the serve S3 bucket
       const putParams = {
         Bucket: process.env.SERVE_BUCKET,
         Key: key,
-        Body: JSON.stringify(article),
+        Body: gptResponse.article,
         ContentType: 'application/json'
       };
       const res = await s3.putObject(putParams).promise();
       console.log('Successfully added article to serve bucket: ', res);
 
       // Write the serve meta
+      console.log('Writing the serve meta')
       const servePutParams = {
         TableName: singleTableName,
         Item: {
-          'pubDate': { N: DateTime.fromHTTP(queriedItems.Items[0].pubDate).toUnixInteger() },
-          'description': { S: gptOutput?.description },
-          'title': { S: gptOutput?.headline },
-          'author': { S: AUTHOR },
-          'category': { S: gptOutput?.category },
-          'Sk': { S: key.replace('.json','') },
-          'Pk': { S: 'serve-article' }
+          'pubDate': queriedItems.Items[0].pubDate,
+          'description': gptResponse?.description,
+          'title': gptResponse?.headline,
+          'author': AUTHOR,
+          'category': gptResponse?.category,
+          'Sk': key.replace('.json',''),
+          'Pk': 'serve-article'
         }
       };
+      console.log(servePutParams);
       try {
-        const result = await dynamodb.putItem(servePutParams).promise();
+        const result = await db.put(servePutParams).promise();
         console.log('Record written successfully:', result);
       } catch (err) {
         console.error(err);
